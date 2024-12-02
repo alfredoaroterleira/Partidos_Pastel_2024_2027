@@ -1,0 +1,95 @@
+---
+title: "**Gráfico de Pastel: Cámara de Diputados México (2024-2027)**"
+author: "Alfredo Aro Terleira"
+output: html_document
+---
+
+# Importamos base de datos
+
+```{r}
+library(rio)
+d_2024 = import("diputados_2024.xlsx")
+```
+
+# Gráfico 1: Porcentaje de mujeres y hombres en toda la Cámara de Diputados
+
+## Paso 1.1: Codificamos
+
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+# Calculamos el total de mujeres y hombres
+total_mujeres = sum(d_2024$MUJERES)
+total_hombres = sum(d_2024$HOMBRES)
+
+# Creamos un dataframe para el gráfico
+sexo_total = data.frame(
+  Sexo = c("Mujeres","Hombres"),
+  Total = c(total_mujeres, total_hombres)
+)
+
+# Calculamos el porcentaje
+sexo_total$Porcentaje = round(sexo_total$Total / sum(sexo_total$Total) * 100, 1)
+
+# Gráfico de pastel
+ggplot(sexo_total, aes(x = "", y = Total, fill = Sexo)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y") +
+  theme_void() +
+  labs(title = "Distribución de Mujeres y Hombres \nen la Cámara de Diputados (2024-2027)") +
+  theme(
+    legend.title = element_blank(),
+    plot.title = element_text(hjust = 0.2, size = 20, face = "bold") 
+  ) +
+  scale_fill_manual(values = c("Mujeres" = "#FF69B4", "Hombres" = "#1E88E5")) +
+  geom_text(aes(label = paste(Porcentaje, "%")), position = position_stack(vjust = 0.5))
+```
+
+```{r}
+# Guardamos el gráfico
+ggsave("grafico_2024_hym.png", width = 8, height = 6)
+```
+
+# Gráfico 2: Porcentaje de mujeres y hombres
+
+## Paso 2.1: Codificamos
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+```{r}
+# Creamos un dataframe para mujeres y hombres por partido
+sexo_partido = d_2024 %>%
+  select(PARTIDO, MUJERES, HOMBRES) %>%
+  gather(key = "Sexo", value = "Total", MUJERES, HOMBRES) %>%
+  group_by(PARTIDO) %>%
+  mutate(Porcentaje = Total / sum(Total) * 100) # Normalizamos a porcentajes
+
+# Gráfico de pastel por partido
+ggplot(sexo_partido, aes(x = "", y = Porcentaje, fill = Sexo)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y") +
+  facet_wrap(~PARTIDO, ncol = 4) + # Distribuir gráficos por partido
+  theme_void() +
+  labs(title = "Distribución de Mujeres y Hombres por Partido (2024-2027)") +
+  theme(
+    legend.title = element_blank(),
+    strip.text = element_text(size = 9, face = "bold"),
+    plot.title = element_text(hjust = 0.3, size = 14, face = "bold") # Centrar el título
+  ) +
+  scale_fill_manual(values = c("MUJERES" = "#FF69B4", "HOMBRES" = "#1E88E5")) +
+  geom_text(aes(label = paste0(round(Porcentaje, 1), "%")), 
+            position = position_stack(vjust = 0.5), size = 3)
+```
+
+```{r}
+# Guardamos la imagen
+ggsave("2024_hym_partidos.png", width = 8, height = 6)
+```
+
